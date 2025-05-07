@@ -22,6 +22,9 @@ find_package(Python3 REQUIRED COMPONENTS Development)
 set(Boost_NO_SYSTEM_PATHS ON)
 set(BOOST_ROOT "$ENV{HOME}/cppLocal/boostBuild")
 find_package(Boost REQUIRED COMPONENTS python numpy filesystem)
+# Armadillo configuration
+find_path(ARMADILLO_INCLUDE_DIR armadillo HINTS "/home/adada/cppLocal/armadillo_intel/include")
+find_library(ARMADILLO_LIBRARY armadillo HINTS "/home/adada/cppLocal/armadillo_intel/lib")
 
 # Set specific optimization for critical files
 set_source_files_properties(
@@ -31,7 +34,7 @@ set_source_files_properties(
 )
 # Include directories
 target_include_directories(run_kpm PRIVATE
-
+        ${ARMADILLO_INCLUDE_DIR}
         ${Python3_INCLUDE_DIRS}
 )
 
