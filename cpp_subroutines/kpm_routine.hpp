@@ -4,11 +4,14 @@
 
 #ifndef KPM_ROUTINE_HPP
 #define KPM_ROUTINE_HPP
+#include <algorithm>
+#include <armadillo>
 #include <boost/filesystem.hpp>
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
 #include <cfenv> // for floating-point exceptions
 #include <cmath>
+#include <complex>
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -25,14 +28,175 @@ constexpr double PI = M_PI;
 
 class kpm_computation
 {
+public:
+
+    kpm_computation(const std::string& cppInParamsFileName)
+    {
+        std::ifstream file(cppInParamsFileName);
+        if (!file.is_open())
+        {
+            std::cerr << "Failed to open the file." << std::endl;
+            std::exit(20);
+        }
+        std::string line;
+        int paramCounter = 0;
+        while (std::getline(file, line))
+        {
+            // Check if the line is empty
+            if (line.empty())
+            {
+                continue; // Skip empty lines
+            }
+            std::istringstream iss(line);
+            //read N
+            if (paramCounter == 0)
+            {
+                iss>>N1;
+                N2=N1;
+                if (N1<=0)
+                {
+                    std::cerr << "N1 must be >0" << std::endl;
+                    std::exit(1);
+                }
+                std::cout<<"N1="<<N1<<", N2="<<N2<<std::endl;
+                paramCounter++;
+                continue;
+            }//end N
+
+            //read Nm
+            if (paramCounter == 1)
+            {
+                iss>>Nm;
+                if (Nm<=0)
+                {
+                    std::cerr << "Nm must be >0" << std::endl;
+                    std::exit(1);
+                }
+                std::cout<<"Nm="<<Nm<<std::endl;
+                paramCounter++;
+                continue;
+            }//end Nm
+            //read R
+            if (paramCounter == 2)
+            {
+                iss>>R;
+                if (R<=0)
+                {
+                    std::cerr << "R must be >0" << std::endl;
+                    std::exit(1);
+                }
+                std::cout<<"R="<<R<<std::endl;
+                paramCounter++;
+                continue;
+            }//end R
+            //read lamb
+            if (paramCounter == 3)
+            {
+                iss>>lamb;
+                std::cout<<"lamb="<<lamb<<std::endl;
+                paramCounter++;
+                continue;
+            }//end lamb
+            //read t0
+            if (paramCounter == 4)
+            {
+                iss>>t0;
+                std::cout<<"t0="<<t0<<std::endl;
+                paramCounter++;
+                continue;
+            }//end t0
+        //read parallel_num
+            if (paramCounter == 5)
+            {
+                iss>>parallel_num;
+                if (parallel_num<=0)
+                {
+                    std::cerr << "parallel_num must be >0" << std::endl;
+                    std::exit(1);
+                }
+                std::cout<<"parallel_num="<<parallel_num<<std::endl;
+                paramCounter++;
+                continue;
+            }//end parallel_num
+
+        }//end while
+    this->d_vec_around_A={{0,0},{-1,0},{0,-1}};
+        this->d_vec_around_B={{0,0},{1,0},{0,1}};
+
+    }//end constructor
 
 public:
+    ///
+    ///build sparse matrix Hamiltonian, E max, E min
+    void build_H_sparse();
+    /// 
+    /// @return a dense matrix for Hamiltonian
+    arma::cx_dmat build_H_dense();
+    ///
+    /// @param n1 unit cell index in direction 1
+    /// @param n2 unit cell index in direction 2
+    /// @return a vector of indices of A around B
+    std::vector<int> get_neighbors_of_B(const int &n1, const int & n2);
+    ///
+    /// @param n1 unit cell index in direction 1
+    /// @param n2 unit cell index in direction 2
+    /// @return a vector of indices of B around A
+    std::vector<int> get_neighbors_of_A(const int &n1, const int & n2);
+
+    ///
+    /// @param n1 unit cell index in direction 1
+    /// @param n2 unit cell index in direction 2
+    /// @return flattened index n1*N2+n2
+    int flattened_ind(const int &n1, const int & n2);
+
+    ///
+    //    /// @param m1 index in direction 1
+    //    /// @return m1%N1 in python
+    int mod_direction1(const int&m1);
+
+    ///
+    /// @param m2 index in direction 2
+    /// @return m2%N2 in python
+    int mod_mod_direction2(const int&m2);
+
+
+    // Template function to print the contents of a std::vector<T>
+    template <typename T>
+    void print_vector(const std::vector<T>& vec)
+    {
+        // Check if the vector is empty
+        if (vec.empty())
+        {
+            std::cout << "Vector is empty." << std::endl;
+            return;
+        }
+
+        // Print each element with a comma between them
+        for (size_t i = 0; i < vec.size(); ++i)
+        {
+            // Print a comma before all elements except the first one
+            if (i > 0)
+            {
+                std::cout << ", ";
+            }
+            std::cout << vec[i];
+        }
+        std::cout << std::endl;
+    }
+public:
+    std::vector<std::vector<int>>d_vec_around_A;// difference of position of B neighbors around A
+    std::vector<std::vector<int>> d_vec_around_B;// difference of position of A neighbors around B
     int N1, N2;
     int Nm;
     double lamb;
     double t0;
     int R;
     int parallel_num;
+    arma::sp_cx_dmat H_big;//unscaled Hamiltonian
+    double E_big_max;
+    double E_big_min;
+    arma::sp_cx_dmat H_tilde;//scaled Hamiltonian
+    double eps;
 
 };
 #endif //KPM_ROUTINE_HPP

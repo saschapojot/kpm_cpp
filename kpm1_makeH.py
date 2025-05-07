@@ -55,6 +55,7 @@ def build_H(N1,N2):
     eb=(Emax+Emin)*0.5
     ea=(Emax-Emin)/(2-0.01)
     # rescaled, eigvalues in (-1,1)
+    print(f"a={ea}, b={eb}")
     H_tilde=(( H_big-eb*ss.eye(H_big.shape[0],format='csr',dtype=complex) )/ea)
     return H_tilde,Emin,Emax
 

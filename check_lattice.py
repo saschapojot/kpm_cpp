@@ -9,8 +9,8 @@ delta=1/3**.5
 Rx_list=[]
 Ry_list=[]
 
-N1=3
-N2=3
+N1=5
+N2=5
 
 fig,ax=plt.subplots()
 ax.set_aspect("equal")
@@ -31,11 +31,11 @@ Ry_list=np.array(Ry_list)
 ax.scatter(Rx_list,Ry_list)
 ax.scatter(Rx_list,Ry_list+delta)
 
-def get_neighbors(ind,sublattice):
+def get_neighbors(m1,n1,sublattice):
     global N1,N2
     #ind=m1*N2+n1
-    m1=ind//N2
-    n1=ind%N2
+    # m1=ind//N2
+    # n1=ind%N2
     assert sublattice =="A" or sublattice == "B"
     ind_neighbors=[]
     if sublattice == "A":
@@ -54,8 +54,8 @@ def get_neighbors(ind,sublattice):
         ind_neighbors.append(ind2)
     return ind_neighbors
 
-print(get_neighbors(2,"A"))
-print(get_neighbors(2,"B"))
+print(get_neighbors(1,1,"A"))
+print(get_neighbors(1,2,"B"))
 
 
 plt.savefig("lattice.png")
