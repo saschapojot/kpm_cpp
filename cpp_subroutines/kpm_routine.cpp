@@ -246,3 +246,81 @@ arma:: cx_dvec eig_vals_large;
     this->H_tilde=(H_big-b_complex*I_mat)/a_complex;
     // H_tilde.print();
 }
+
+
+///
+/// @param m
+/// @param Nm
+/// @param lamb
+/// @return coefficients of gn
+double kpm_computation::kpm_gn(const int &m, const int & Nm, const double &lamb)
+{
+    double Nm_db=static_cast<double>(Nm);
+    double m_db=static_cast<double>(m);
+    double factor1=1.0/(Nm_db+1.0);
+    double cos_part=(Nm_db-m_db+1.0)*std::cos(PI*m_db/(Nm_db+1.0));
+
+    double sin_part=std::sin(PI*m_db/(Nm_db+1.0))/std::tan(PI/(Nm+1.0));
+
+    return (cos_part+sin_part)*factor1;
+
+}
+
+///
+/// @param n
+/// @param x
+/// @return T_{n}(x)
+double kpm_computation::T_cheb(const int &n, const double &x)
+{
+    double n_db=static_cast<double>(n);
+    return std::cos(n_db*std::acos(x));
+}
+
+
+
+
+///
+/// @param H_tilde rescaled Hamiltonian
+/// @param Nm number of moments
+/// @param r_ket random vector |r> (normalized)
+/// @param moments moments computed from |r>
+void kpm_computation::write_moments(const arma::sp_cx_dmat & H_tilde, const int &Nm,
+    const arma::cx_dvec & r_ket, arma::dvec &moments)
+{
+    //integer division
+    // if Nm is odd, then 2 * Nm_cal +1 = Nm
+    // if Nm is even, then 2* Nm_cal = Nm
+    //in this code we assume that Nm_cal is even
+    int Nm_cal=Nm/2;
+    //initialize moments
+    moments=arma::dvec(Nm,arma::fill::zeros);
+
+    //vectors for iteration
+    arma::cx_dvec zj_minus1=r_ket;//|z0>
+    arma::cx_dvec zj=H_tilde*zj_minus1;// |z1>
+    std::complex<double> two=std::complex<double>(2.0,0);
+    arma::cx_dvec zj_plus1=two*H_tilde*zj-zj_minus1; // |z2>
+
+    //initialize mu0, mu1
+    std::complex<double>mu0_complex=std::complex<double>(1,0);//<r|r>
+    std::complex<double>mu1_complex=arma::cdot(r_ket,zj);//<r|z1>
+
+    // std::cout<<"mu0_complex="<<mu0_complex<<std::endl;
+    // std::cout<<"mu1_complex="<<mu1_complex<<std::endl;
+    moments[0]=mu0_complex.real();
+    moments[1]=mu1_complex.real();
+
+    for (int j=1;j<=Nm_cal-1;j++)
+    {
+        std::complex<double> mu2j=two*arma::cdot(zj,zj)-mu0_complex;
+        std::complex<double>mu2j_plus1=two*arma::cdot(zj,zj_plus1)-mu1_complex;
+        moments[2*j]=mu2j.real();
+        moments[2*j+1]=mu2j_plus1.real();
+        zj_minus1=zj;
+        zj=zj_plus1;
+        zj_plus1=two*H_tilde*zj-zj_minus1;
+    }//end for j
+
+
+
+}

@@ -23,6 +23,7 @@ N_vec=[3]#unit cell number
 R_vec=[60]# number of random vectors
 lamb=1  #not used if it is not lorentz
 t0=2.7
+E_tilde_num=73 #Q
 dataOutDir="./dataAll/"
 
 def contents_to_conf(ind_N,ind_Nm,ind_R):
@@ -39,14 +40,15 @@ def contents_to_conf(ind_N,ind_Nm,ind_R):
     lamb_Str=format_using_decimal(lamb)
     t0_Str=format_using_decimal(t0)
     parallel_num_Str=format_using_decimal(parallel_num)
-
+    Q_str=format_using_decimal(E_tilde_num)
     contents=[
         f"{N_Str}\n",
         f"{Nm_Str}\n",
         f"{R_Str}\n",
         f"{lamb_Str}\n",
         f"{t0_Str}\n",
-        f"{parallel_num_Str}\n"
+        f"{parallel_num_Str}\n",
+        f"{Q_str}\n"
         ]
     outDir=dataOutDir+f"/N{N_Str}/Nm{Nm_Str}/R{R_Str}/"
     Path(outDir).mkdir(exist_ok=True,parents=True)

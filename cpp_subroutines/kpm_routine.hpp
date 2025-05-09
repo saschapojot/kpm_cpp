@@ -118,6 +118,19 @@ public:
                 paramCounter++;
                 continue;
             }//end parallel_num
+            //read Q
+            if (paramCounter == 6)
+            {
+                iss>>Q;
+                if (Q<=0)
+                {
+                    std::cerr<<"Q must be >0"<<std::endl;
+                    std::exit(1);
+                }
+                std::cout<<"Q="<<Q<<std::endl;
+                paramCounter++;
+                continue;
+            }//end Q
 
         }//end while
     this->d_vec_around_A={{0,0},{-1,0},{0,-1}};
@@ -126,6 +139,23 @@ public:
     }//end constructor
 
 public:
+    ///
+    /// @param H_tilde rescaled Hamiltonian
+    /// @param Nm number of moments
+    /// @param r_ket random vector |r>  (normalized)
+    /// @param moments moments computed from |r>
+    void write_moments(const arma::sp_cx_dmat & H_tilde, const int &Nm, const arma::cx_dvec & r_ket, arma::dvec &moments);
+    ///
+    /// @param n
+    /// @param x
+    /// @return T_{n}(x)
+    double T_cheb(const int &n, const double &x);
+    ///
+    /// @param m
+    /// @param Nm
+    /// @param lamb
+    /// @return coefficients of gn
+    double kpm_gn(const int &m, const int & Nm, const double &lamb);
     ///
     ///build sparse matrix Hamiltonian, E max, E min
     void build_H_sparse();
@@ -183,6 +213,49 @@ public:
         }
         std::cout << std::endl;
     }
+    template <class T>
+    void print_shared_ptr(std::shared_ptr<T> ptr, const int& size)
+    {
+        if (!ptr)
+        {
+            std::cout << "Pointer is null." << std::endl;
+            return;
+        }
+
+        for (int i = 0; i < size; i++)
+        {
+            if (i < size - 1)
+            {
+                std::cout << ptr[i] << ",";
+            }
+            else
+            {
+                std::cout << ptr[i] << std::endl;
+            }
+        }
+    } //end print_shared_ptr
+
+    template <class T>
+    void print_ptr(T*  ptr, const int& size)
+    {
+        if (!ptr)
+        {
+            std::cout << "Pointer is null." << std::endl;
+            return;
+        }
+
+        for (int i = 0; i < size; i++)
+        {
+            if (i < size - 1)
+            {
+                std::cout << ptr[i] << ",";
+            }
+            else
+            {
+                std::cout << ptr[i] << std::endl;
+            }
+        }
+    } //end print_ptr
 public:
     std::vector<std::vector<int>>d_vec_around_A;// difference of position of B neighbors around A
     std::vector<std::vector<int>> d_vec_around_B;// difference of position of A neighbors around B
@@ -197,6 +270,9 @@ public:
     double E_big_min;
     arma::sp_cx_dmat H_tilde;//scaled Hamiltonian
     double eps;
+    std::vector<double>g_coef_vec;//kernel coefficients
+    std::vector<double> E_tilde_vec;
+    int Q;
 
 };
 #endif //KPM_ROUTINE_HPP
