@@ -324,3 +324,44 @@ void kpm_computation::write_moments(const arma::sp_cx_dmat & H_tilde, const int 
 
 
 }
+
+
+
+///
+/// this function precompute  g_coef_vec (kernel coefficients)
+void kpm_computation::compute_g_coef_vec()
+{
+this->g_coef_vec.resize(this->Nm);
+for (int m=0;m<=Nm-1;m++)
+{
+    g_coef_vec[m]=kpm_gn(m,Nm,lamb);
+}//end for m
+}
+
+
+///
+/// rescaled energy in (-1,1)
+void kpm_computation::construct_E_tilde_vec()
+{
+double start=this->E_big_min/1.5;
+    double end=this->E_big_max/1.5;
+    std::cout<<"E tilde start="<<start<<", E tilde end="<<end<<std::endl;
+double step=(end-start)/(static_cast<double>(Q)-1.0);
+
+this->E_tilde_vec.reserve(Q);
+    for (int i=0;i<Q;i++)
+    {
+        E_tilde_vec.push_back(start + i * step);
+    }//end for i
+
+}
+
+///
+/// compute dos serially
+void kpm_computation::compute_dos_serial()
+{
+    this->build_H_sparse();
+    this->compute_g_coef_vec();
+    this->construct_E_tilde_vec();
+    print_vector(E_tilde_vec);
+}

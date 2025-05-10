@@ -140,6 +140,15 @@ public:
 
 public:
     ///
+    /// compute dos serially
+    void compute_dos_serial();
+    ///
+    /// rescaled energy in (-1,1)
+    void construct_E_tilde_vec();
+    ///
+    /// this function precompute  g_coef_vec (kernel coefficients)
+    void compute_g_coef_vec();
+    ///
     /// @param H_tilde rescaled Hamiltonian
     /// @param Nm number of moments
     /// @param r_ket random vector |r>  (normalized)
@@ -271,8 +280,9 @@ public:
     arma::sp_cx_dmat H_tilde;//scaled Hamiltonian
     double eps;
     std::vector<double>g_coef_vec;//kernel coefficients
-    std::vector<double> E_tilde_vec;
+    std::vector<double> E_tilde_vec;//vector of rescaled energy, in (-1,1)
     int Q;
+    arma::dmat coef_of_moments;
 
 };
 #endif //KPM_ROUTINE_HPP
