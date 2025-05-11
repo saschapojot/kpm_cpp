@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <armadillo>
 #include <boost/filesystem.hpp>
-#include <boost/python.hpp>
-#include <boost/python/numpy.hpp>
+// #include <boost/python.hpp>
+// #include <boost/python/numpy.hpp>
 #include <cfenv> // for floating-point exceptions
 #include <cmath>
 #include <complex>
@@ -21,8 +21,8 @@
 #include <vector>
 
 namespace fs = boost::filesystem;
-namespace py = boost::python;
-namespace np = boost::python::numpy;
+// namespace py = boost::python;
+// namespace np = boost::python::numpy;
 
 constexpr double PI = M_PI;
 
@@ -59,6 +59,8 @@ public:
                     std::exit(1);
                 }
                 std::cout<<"N1="<<N1<<", N2="<<N2<<std::endl;
+                this->length=2*N1*N2;
+                std::cout<<"length="<<length<<std::endl;
                 paramCounter++;
                 continue;
             }//end N
@@ -135,10 +137,31 @@ public:
         }//end while
     this->d_vec_around_A={{0,0},{-1,0},{0,-1}};
         this->d_vec_around_B={{0,0},{1,0},{0,1}};
-
+        boost::filesystem::path filePath(cppInParamsFileName);
+        this->dataRoot=filePath.parent_path().string();
+std::cout<<"dataRoot="<<dataRoot<<std::endl;
     }//end constructor
 
 public:
+    ///
+    /// @param E_tilde_vec vector  of rescaled energy
+    /// @param rho_vec vector of dos
+    void write_dos_2_csv(const std::vector<double>& E_tilde_vec,std::vector<double> & rho_vec);
+    ///
+    ///compute rho(E_tilde) for all q, and write to file
+    std::vector<double>  rho_E_tilde_all_q();
+    ///
+    /// @param q index of E_tilde
+    /// @return rho(E_tilde)
+    double rho_E_tilde(const int &q);
+    ///
+    /// @param r index of random vector
+    /// @param q index of E_tilde
+    /// @return rho_{r}(E_tilde)
+    double rho_r_E_tilde(const int &r, const int &q);
+    ///
+    /// compute [g0,2g1 T1,...,2g_{N-1}T_{N-1}]
+    void construct_coef_of_moments();
     ///
     /// compute dos serially
     void compute_dos_serial();
@@ -283,6 +306,11 @@ public:
     std::vector<double> E_tilde_vec;//vector of rescaled energy, in (-1,1)
     int Q;
     arma::dmat coef_of_moments;
+    double a;
+    double b;
+    int length;
+    std::string dataRoot;
+
 
 };
 #endif //KPM_ROUTINE_HPP

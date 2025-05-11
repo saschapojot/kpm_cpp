@@ -16,7 +16,7 @@ target_compile_options(run_kpm PRIVATE
 )
 
 # Find Python
-find_package(Python3 REQUIRED COMPONENTS Development)
+#find_package(Python3 REQUIRED COMPONENTS Development)
 
 # Find Boost
 set(Boost_NO_SYSTEM_PATHS ON)
@@ -35,7 +35,7 @@ set_source_files_properties(
 # Include directories
 target_include_directories(run_kpm PRIVATE
         ${ARMADILLO_INCLUDE_DIR}
-        ${Python3_INCLUDE_DIRS}
+#        ${Python3_INCLUDE_DIRS}
 )
 
 
@@ -45,7 +45,7 @@ target_link_libraries(run_kpm PRIVATE
         m
         ${ARMADILLO_LIBRARY}
         Boost::filesystem
-        Boost::python
-        Boost::numpy
-        Python3::Python
+#        Boost::python
+#        Boost::numpy
+#        Python3::Python
 )
