@@ -339,8 +339,8 @@ void kpm_computation::construct_E_tilde_vec()
 {
     const auto t_E_tilde_Start{std::chrono::steady_clock::now()};
     double scale = 1.1;
-    double start = this->E_big_min / scale;
-    double end = this->E_big_max / scale;
+    double start = -6;//this->E_big_min / scale;
+    double end = 6;//this->E_big_max / scale;
     std::cout << "E tilde start=" << start << ", E tilde end=" << end << std::endl;
     double step = (end - start) / (static_cast<double>(Q) - 1.0);
 
@@ -397,7 +397,16 @@ void kpm_computation::compute_dos_serial()
     std::vector<double>rho_E_tilde_all_q_vec=this->rho_E_tilde_all_q();
     this->write_dos_2_csv(this->E_tilde_vec,rho_E_tilde_all_q_vec);
 }
+///compute in parallel
+void kpm_computation::compute_dos_parallel()
+{
+    this->build_H_sparse();
+    this->compute_g_coef_vec();
+    this->construct_E_tilde_vec();
+    this->construct_coef_of_moments();
 
+    this->allocate_r_ket_all();
+}
 
 ///
 /// @param r index of random vector
@@ -425,7 +434,7 @@ double kpm_computation::rho_E_tilde(const int& q)
 {
     const auto t_one_rho_E_tilde_Start{std::chrono::steady_clock::now()};
     double rho_E_tilde = 0;
-    for (int r = 0; r < R + 1; r++)
+    for (int r = 0; r < R; r++)
     {
         rho_E_tilde += this->rho_r_E_tilde(r, q);
     } //end for r
@@ -478,5 +487,29 @@ void kpm_computation::write_dos_2_csv(const std::vector<double>& E_tilde_vec,std
     // Close the file
     outFile.close();
     std::cout << "Vectors have been written to file successfully." << std::endl;
+
+}
+
+
+//initializes all r_ket
+void kpm_computation::allocate_r_ket_all()
+{
+    const auto t_allocate_r_ket_all_Start{std::chrono::steady_clock::now()};
+
+    this->r_ket_all=arma::cx_dcube(Q,R,length,arma::fill::randn);
+    arma::cx_dvec  vec;
+    for (int q=0;q<Q;q++)
+    {
+        for (int r=0;r<R;r++)
+        {
+            vec = r_ket_all.tube(q, r);
+            double norm_tmp = arma::norm(vec, 2);
+            r_ket_all.tube(q, r) = vec / std::complex<double>(norm_tmp,0);
+        }//end for r
+    }//end for q
+
+    const auto t_allocate_r_ket_all_End{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> elapsed_secondsAll{t_allocate_r_ket_all_End - t_allocate_r_ket_all_Start};
+    std::cout << "allocate all r_ket time: " << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
 
 }

@@ -143,6 +143,10 @@ std::cout<<"dataRoot="<<dataRoot<<std::endl;
     }//end constructor
 
 public:
+    ///compute in parallel
+    void compute_dos_parallel();
+    ///initializes all r_ket
+    void allocate_r_ket_all();
     ///
     /// @param E_tilde_vec vector  of rescaled energy
     /// @param rho_vec vector of dos
@@ -310,6 +314,8 @@ public:
     double b;
     int length;
     std::string dataRoot;
+
+    arma::cx_dcube  r_ket_all;//all r_ket
 
 
 };

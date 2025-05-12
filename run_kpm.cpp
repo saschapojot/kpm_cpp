@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     }
 
     auto kpm_obj=kpm_computation(std::string(argv[1]));
-    kpm_obj.compute_dos_serial();
+    kpm_obj.compute_dos_parallel();
 
 
     return 0;
