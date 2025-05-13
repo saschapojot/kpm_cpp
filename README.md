@@ -7,6 +7,14 @@ python part
 2. in kpm1_makeH.py, the Hamiltonian is built
 3. the computation contains in kpm2_cheb.py
 
+#############################
+c++ part
+1. initialize directories and parameters:
+   python mk_dir.py
+2. cmake .
+3. make run_kpm
+4. ./run_kpm ./path/to/cppIn.txt
+
 
 ###############
 c++ part
