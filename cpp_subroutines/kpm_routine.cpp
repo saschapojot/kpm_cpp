@@ -354,7 +354,13 @@ void kpm_computation::construct_E_tilde_vec()
     {
         val = (val - b) / a;
     } //end rescaling
-
+    this->rho_prefactor=arma::dvec(Q,arma::fill::zeros);
+    for (int j=0;j<Q;j++)
+    {
+        double val=E_tilde_vec[j];
+        rho_prefactor(j)=1.0/std::sqrt(1.0-std::pow(val,2))
+        *1.0/PI*1.0/static_cast<double>(R);
+    }
     const auto t_E_tilde_End{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> elapsed_secondsAll{t_E_tilde_End - t_E_tilde_Start};
     std::cout << "build E_tilde time: " << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
@@ -394,9 +400,46 @@ void kpm_computation::compute_dos_serial()
     this->compute_g_coef_vec();
     this->construct_E_tilde_vec();
     this->construct_coef_of_moments();
+
     std::vector<double>rho_E_tilde_all_q_vec=this->rho_E_tilde_all_q();
     this->write_dos_2_csv(this->E_tilde_vec,rho_E_tilde_all_q_vec);
 }
+
+void kpm_computation::compute_all_rho_parallel_threads(std::vector<double>& results)
+{
+    const auto t_rho_parallel_Start{std::chrono::steady_clock::now()};
+
+    int q_max=Q;
+    int r_max=R;
+    results.resize(q_max * r_max);
+    unsigned num_threads =this->parallel_num;//std::thread::hardware_concurrency();
+    std::vector<std::thread> threads;
+
+    auto worker = [&](int start_q, int end_q) {
+        for (int q = start_q; q < end_q; ++q) {
+            for (int r = 0; r < r_max; ++r) {
+                int index = q * r_max + r;
+                results[index] = rho_r_E_tilde_for_parallel(q, r);
+            }
+        }
+    };
+
+    int chunk_size = q_max / num_threads;
+    for (unsigned i = 0; i < num_threads; ++i) {
+        int start = i * chunk_size;
+        int end = (i == num_threads - 1) ? q_max : start + chunk_size;
+        threads.emplace_back(worker, start, end);
+    }
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    const auto t_rho_parallel_End{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> elapsed_secondsAll{t_rho_parallel_End - t_rho_parallel_Start};
+    std::cout << "rho_parallel time: " << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
+}
+
+
 ///compute in parallel
 void kpm_computation::compute_dos_parallel()
 {
@@ -404,29 +447,87 @@ void kpm_computation::compute_dos_parallel()
     this->compute_g_coef_vec();
     this->construct_E_tilde_vec();
     this->construct_coef_of_moments();
-
+    //initialize all random vectors
     this->allocate_r_ket_all();
+    //initialize all moments
+    this->allocate_moments_all();
+std::vector<double>results;
+    this->compute_all_rho_parallel_threads(results);
+
+    this->write_flattened_results(results);
+    // double val=this->rho_r_E_tilde_for_parallel(10,20);
+    // std::cout<<val<<std::endl;
+    // arma::cx_dvec vec=*r_ket_all[12];
+    // double nm=arma::norm(vec,2);
+    // std::cout<<nm<<std::endl;
+
+
 }
 
 ///
-/// @param r index of random vector
+
 /// @param q index of E_tilde
+//// @param r index of random vector
 /// @return rho_{r}(E_tilde)
-double kpm_computation::rho_r_E_tilde(const int& r, const int& q)
+double kpm_computation::rho_r_E_tilde(const int& q, const int& r)
 {
     //random vector
     arma::cx_dvec r_ket = arma::randn<arma::cx_vec>(this->length);
     //normalize random vector
     r_ket = r_ket / std::complex<double>(arma::norm(r_ket, 2), 0);
     //initialize moments
-    arma::dvec moments = arma::dvec(Nm, arma::fill::zeros);
+    arma::dvec  moments = arma::dvec(Nm,arma::fill::zeros);
     //compute moments
-    this->write_moments(this->H_tilde, this->Nm, r_ket, moments);
+    this->write_moments(this->H_tilde, this->Nm,
+        r_ket, moments);
     double rho_r_E_tilde_val = arma::dot(moments, this->coef_of_moments.row(q));
     return rho_r_E_tilde_val;
 }
 
 
+
+///
+/// @param q index of E_tilde
+/// @param r index of random vector
+/// @return rho_{r}(E_tilde)
+double kpm_computation::rho_r_E_tilde_for_parallel(int q, int r)
+{
+    int flat_ind=flattened_index_qr(q,r);
+    arma::dvec & moments=*(this->moments_all[flat_ind]);
+    arma::cx_dvec & r_ket=*(this->r_ket_all[flat_ind]);
+    //compute moments
+    this->write_moments(this->H_tilde, this->Nm,
+        r_ket, moments);
+    double rho_r_E_tilde_val = arma::dot(moments, this->coef_of_moments.row(q));
+    return rho_r_E_tilde_val;
+}
+
+
+
+int kpm_computation::flattened_index_qr(const int &q, const int &r)
+{
+    return q*R+r;
+}
+
+///initialize all moments
+void kpm_computation::allocate_moments_all()
+{
+    std::cout<<"moments_all dimension: ("<<Q<<", "<<R<<", "<<Nm<<")"<<std::endl;
+    const auto t_allocate_moments_all_Start{std::chrono::steady_clock::now()};
+    this->moments_all.reserve(Q*R);
+    for (int q=0;q<Q;q++)
+    {
+        for (int r=0;r<R;r++)
+        {
+            auto v_ptr = std::make_shared<arma::dvec>(Nm, arma::fill::zeros);
+            moments_all.push_back(v_ptr);
+
+        }//end for r
+    }//end for q
+    const auto t_allocate_moments_all_End{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> elapsed_secondsAll{t_allocate_moments_all_End - t_allocate_moments_all_Start};
+    std::cout << "allocate moments time: " << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
+}
 ///
 /// @param q index of E_tilde
 /// @return rho(E_tilde)
@@ -436,7 +537,7 @@ double kpm_computation::rho_E_tilde(const int& q)
     double rho_E_tilde = 0;
     for (int r = 0; r < R; r++)
     {
-        rho_E_tilde += this->rho_r_E_tilde(r, q);
+        rho_E_tilde += this->rho_r_E_tilde(q,r);
     } //end for r
     double E_tilde_tmp=this->E_tilde_vec[q];
     rho_E_tilde*=1.0/(PI*std::sqrt(1.0-std::pow(E_tilde_tmp,2.0)))*1.0/static_cast<double>(R);
@@ -490,23 +591,54 @@ void kpm_computation::write_dos_2_csv(const std::vector<double>& E_tilde_vec,std
 
 }
 
+/// write to file
+/// @param results
+void  kpm_computation::write_flattened_results(const std::vector<double>& results)
+{
+    int q_max=Q;
+    int r_max=R;
+    arma::dmat matrix(results.data(), r_max, q_max);
+    arma::dmat all_rho_data=matrix.t();
+
+    arma::dvec rho_sum=arma::sum(all_rho_data,1);
+
+    arma::dvec rho_result=rho_sum%this->rho_prefactor;
+    std::ofstream outFile(this->dataRoot+"/out_dos_parallel.csv");
+    // Check if the file was opened successfully
+    if (!outFile.is_open()) {
+        std::cerr << "Error opening file for writing." << std::endl;
+        std::exit(2);
+    }
+
+    outFile<<"E_tilde,dos\n";
+    for (int j=0;j<E_tilde_vec.size();j++)
+    {
+        outFile<<E_tilde_vec[j]<<","<<rho_result[j]<<"\n";
+    }
+    // Close the file
+    outFile.close();
+    std::cout << "Vectors have been written to file successfully." << std::endl;
+
+
+}
 
 //initializes all r_ket
 void kpm_computation::allocate_r_ket_all()
 {
     const auto t_allocate_r_ket_all_Start{std::chrono::steady_clock::now()};
-
-    this->r_ket_all=arma::cx_dcube(Q,R,length,arma::fill::randn);
-    arma::cx_dvec  vec;
+    this->r_ket_all.reserve(Q*R);
+    std::cout<<"r_ket_all dimension: ("<<Q<<", "<<R<<", "<<length<<")"<<std::endl;
     for (int q=0;q<Q;q++)
     {
         for (int r=0;r<R;r++)
         {
-            vec = r_ket_all.tube(q, r);
-            double norm_tmp = arma::norm(vec, 2);
-            r_ket_all.tube(q, r) = vec / std::complex<double>(norm_tmp,0);
-        }//end for r
-    }//end for q
+            auto v_ptr = std::make_shared<arma::cx_dvec>(length, arma::fill::randn);
+            double norm_tmp=arma::norm(*v_ptr,2);
+            *v_ptr/=std::complex<double>(norm_tmp,0);
+            r_ket_all.push_back(v_ptr);
+        }//end for q
+    }//end for r
+
 
     const auto t_allocate_r_ket_all_End{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> elapsed_secondsAll{t_allocate_r_ket_all_End - t_allocate_r_ket_all_Start};

@@ -16,14 +16,14 @@ def format_using_decimal(value, precision=5):
 
 # N=20 #unit cell number
 # R=50 # number of random vectors
-parallel_num=8 # number of jobs in parallel
+parallel_num=30 # number of jobs in parallel
 # Nm=500 # number of moments
-N_moments_vec=[100] # number of moments
-N_vec=[3]#unit cell number
-R_vec=[60]# number of random vectors
+N_moments_vec=[500] # number of moments
+N_vec=[50]#unit cell number
+R_vec=[50]# number of random vectors
 lamb=1  #not used if it is not lorentz
 t0=2.7
-E_tilde_num=73 #Q
+E_tilde_num=1001 #Q
 dataOutDir="./dataAll/"
 
 def contents_to_conf(ind_N,ind_Nm,ind_R):

@@ -19,7 +19,7 @@ R=int(sys.argv[3])
 
 csvDataFolderRoot=f"../dataAll/N{N}/Nm{Nm}/R{R}/"
 
-inCsvFile=csvDataFolderRoot+"/out_dos.csv"
+inCsvFile=csvDataFolderRoot+"/out_dos_parallel.csv"
 df=pd.read_csv(inCsvFile)
 E_tilde_vec=np.array(df["E_tilde"])
 dos_vec=np.array(df["dos"])

@@ -18,6 +18,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace fs = boost::filesystem;
@@ -145,6 +146,19 @@ std::cout<<"dataRoot="<<dataRoot<<std::endl;
 public:
     ///compute in parallel
     void compute_dos_parallel();
+    /// write to file
+    /// @param results
+    void write_flattened_results(const std::vector<double>& results);
+    void compute_all_rho_parallel_threads(std::vector<double>& results);
+    ///
+    /// @param q index of E_tilde
+    /// @param r index of random vector
+    /// @return rho_{r}(E_tilde)
+    double rho_r_E_tilde_for_parallel(int q, int r);
+    ///initialize all moments
+    void allocate_moments_all();
+
+    int flattened_index_qr(const int &q, const int &r);
     ///initializes all r_ket
     void allocate_r_ket_all();
     ///
@@ -159,10 +173,11 @@ public:
     /// @return rho(E_tilde)
     double rho_E_tilde(const int &q);
     ///
-    /// @param r index of random vector
+
     /// @param q index of E_tilde
+    /// @param r index of random vector
     /// @return rho_{r}(E_tilde)
-    double rho_r_E_tilde(const int &r, const int &q);
+    double rho_r_E_tilde(const int &q, const int &r);
     ///
     /// compute [g0,2g1 T1,...,2g_{N-1}T_{N-1}]
     void construct_coef_of_moments();
@@ -308,6 +323,7 @@ public:
     double eps;
     std::vector<double>g_coef_vec;//kernel coefficients
     std::vector<double> E_tilde_vec;//vector of rescaled energy, in (-1,1)
+    arma::dvec rho_prefactor;//1/sqrt(1-E_tilde^2)1/R
     int Q;
     arma::dmat coef_of_moments;
     double a;
@@ -315,8 +331,9 @@ public:
     int length;
     std::string dataRoot;
 
-    arma::cx_dcube  r_ket_all;//all r_ket
+// std::vector<std::shared_ptr<arma::cx_dvec>>  r_ket_all;//all r_ket
+     std::vector<std::shared_ptr<arma::dvec>> moments_all;// all moments
 
-
+    std::vector<std::shared_ptr<arma::cx_dvec>>  r_ket_all;
 };
 #endif //KPM_ROUTINE_HPP
