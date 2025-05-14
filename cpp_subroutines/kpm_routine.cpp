@@ -422,7 +422,7 @@ void kpm_computation::compute_all_rho_parallel_threads(std::vector<double>& resu
                 results[index] = rho_r_E_tilde_for_parallel(q, r);
             }
         }
-    };
+    };//end lambda function
 
     int chunk_size = q_max / num_threads;
     for (unsigned i = 0; i < num_threads; ++i) {
