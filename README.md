@@ -16,7 +16,7 @@ c++ part
 4. ./run_kpm ./path/to/cppIn.txt
 
 
-###############
-c++ part
-1. initialize directories: 
-    python mk_dir.py
+#############################
+post processing part:
+1. cd plt
+2. python load_csv_plt_dos.py
