@@ -18,5 +18,5 @@ c++ part
 
 #############################
 post processing part:
-1. cd plt
-2. python load_csv_plt_dos.py
+5. cd plt
+6. python load_csv_plt_dos.py
